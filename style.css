@@ -231,19 +231,21 @@ button, input {
 }
 .day-header.weekend { color: var(--primary-dark); }
 
-.grid-body { display: flex; }
+.grid-body { display: flex; padding-top: 6px; }
 .time-col {
   width: var(--time-col-w);
   flex: none;
   border-right: 1px solid var(--border);
+  position: relative;
 }
 .time-label {
-  height: var(--row-h);
+  position: absolute;
+  left: 0;
+  right: 0;
   font-size: 10px;
   font-weight: 700;
   color: var(--text-light);
   text-align: center;
-  position: relative;
 }
 .time-label span {
   position: absolute;

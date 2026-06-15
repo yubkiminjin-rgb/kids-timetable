@@ -549,15 +549,13 @@ function buildScreenGrid(profile, entries, opts) {
   const timeCol = document.createElement('div');
   timeCol.className = 'time-col';
   timeCol.style.height = totalHeight + 'px';
-  for (let i = 0; i < totalSlots; i++) {
-    const slotStart = profStart + i * 30;
+  for (let h = Math.ceil(profStart / 60) * 60; h < profEnd; h += 60) {
     const label = document.createElement('div');
     label.className = 'time-label';
-    if (slotStart % 60 === 0) {
-      const span = document.createElement('span');
-      span.textContent = minToTime(slotStart);
-      label.appendChild(span);
-    }
+    label.style.top = ((h - profStart) / (profEnd - profStart)) * totalHeight + 'px';
+    const span = document.createElement('span');
+    span.textContent = minToTime(h);
+    label.appendChild(span);
     timeCol.appendChild(label);
   }
   body.appendChild(timeCol);
