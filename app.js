@@ -445,10 +445,6 @@ function saveProfile() {
     alert('시작 시간이 종료 시간보다 빨라야 해요.');
     return;
   }
-  // 30분 단위로 보정 (시작은 내림, 종료는 올림)
-  start = minToTime(Math.floor(timeToMin(start) / 30) * 30);
-  end = minToTime(Math.ceil(timeToMin(end) / 30) * 30);
-
   const presetId = document.getElementById('profile-school-preset-select').value || null;
 
   const dayChips = [...document.querySelectorAll('#profile-day-picker .day-chip')];
@@ -775,9 +771,8 @@ function saveEntry() {
     errorEl.textContent = '시작/종료 시간을 입력해주세요.';
     return;
   }
-  // 30분 단위 보정 (시작은 내림, 종료는 올림 - 둘이 같은 칸으로 겹쳐버리는 것을 방지)
-  let startMin = Math.floor(timeToMin(start) / 30) * 30;
-  let endMin = Math.ceil(timeToMin(end) / 30) * 30;
+  const startMin = timeToMin(start);
+  const endMin = timeToMin(end);
 
   if (startMin >= endMin) {
     errorEl.textContent = '시작 시간이 종료 시간보다 빨라야 해요.';
@@ -1212,9 +1207,8 @@ async function generateImage(format) {
     const canvas = await html2canvas(card, { backgroundColor: '#ffffff', scale: format === 'story' ? 1 : 2 });
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
     document.getElementById('image-result-img').src = dataUrl;
-    const link = document.getElementById('btn-image-download');
-    link.href = dataUrl;
-    link.download = `${profile.name}_${semesterLabel}_시간표_${formatLabel}.jpg`;
+    currentImageDataUrl = dataUrl;
+    currentImageFilename = `${profile.name}_${semesterLabel}_시간표_${formatLabel}.jpg`;
   } catch (err) {
     console.error(err);
     alert('이미지 생성 중 오류가 발생했어요.');
@@ -1223,9 +1217,35 @@ async function generateImage(format) {
   }
 }
 
+let currentImageDataUrl = null;
+let currentImageFilename = '시간표.jpg';
+
 async function saveImage() {
   await generateImage(currentImageFormat);
   openModal('modal-image-result');
+}
+
+async function downloadCurrentImage() {
+  if (!currentImageDataUrl) return;
+  const res = await fetch(currentImageDataUrl);
+  const blob = await res.blob();
+  const file = new File([blob], currentImageFilename, { type: 'image/jpeg' });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      return;
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+    }
+  }
+
+  const link = document.createElement('a');
+  link.href = currentImageDataUrl;
+  link.download = currentImageFilename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 function setImageFormat(format) {
@@ -1469,6 +1489,7 @@ function init() {
 
   document.getElementById('btn-save-image').addEventListener('click', saveImage);
   document.getElementById('btn-image-close').addEventListener('click', closeAllModals);
+  document.getElementById('btn-image-download').addEventListener('click', downloadCurrentImage);
   document.querySelectorAll('#image-format-toggle .format-btn').forEach((btn) => {
     btn.addEventListener('click', () => setImageFormat(btn.dataset.format));
   });

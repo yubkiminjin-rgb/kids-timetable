@@ -812,6 +812,11 @@ button, input {
 .pt-entry.is-extra .pt-entry-title { font-size: 9px; }
 
 @media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
   body * { visibility: hidden; }
   #print-area, #print-area * { visibility: visible; }
   #print-area {
