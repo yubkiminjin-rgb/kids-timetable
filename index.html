@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>우리 아이 시간표</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ 프로필 목록 화면 ============ -->
+  <section id="screen-profiles" class="screen active">
+    <header class="topbar">
+      <h1 class="logo">우리 아이 시간표</h1>
+    </header>
+    <div class="profile-list" id="profile-list"></div>
+    <div class="empty-hint" id="profile-empty-hint">
+      아직 등록된 프로필이 없어요.<br>아래 버튼을 눌러 첫 프로필을 만들어보세요!
+    </div>
+    <button class="btn-add-profile" id="btn-add-profile">+ 프로필 추가</button>
+  </section>
+
+  <!-- ============ 시간표 화면 ============ -->
+  <section id="screen-timetable" class="screen">
+    <header class="topbar">
+      <button class="btn-back" id="btn-back-profiles">← 프로필 변경</button>
+      <h1 class="profile-title" id="profile-title-display">이름</h1>
+      <button class="btn-icon" id="btn-open-settings" title="카테고리 설정">⚙️</button>
+    </header>
+
+    <div class="semester-tabs-row">
+      <div class="semester-tabs" id="semester-tabs"></div>
+      <button class="btn-icon" id="btn-copy-semester" title="현재 학기 일정을 다른 학기로 복사">📋</button>
+    </div>
+
+    <div class="grid-wrap">
+      <div class="grid-scroll" id="grid-scroll">
+        <div class="time-grid" id="time-grid"></div>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-secondary" id="btn-save-image">📷 이미지 저장</button>
+      <button class="btn btn-primary" id="btn-print">🖨️ 인쇄</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- ============ 모달 오버레이 ============ -->
+<div id="modal-overlay" class="modal-overlay">
+
+  <!-- 프로필 추가/수정 -->
+  <div id="modal-profile-form" class="modal">
+    <h2 class="modal-title" id="profile-form-title">프로필 추가</h2>
+    <div class="form-group">
+      <label>이름</label>
+      <input type="text" id="profile-name-input" placeholder="예: 민준, 서윤" maxlength="12">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>시작 시간</label>
+        <input type="time" id="profile-start-input" value="07:00">
+      </div>
+      <div class="form-group">
+        <label>종료 시간</label>
+        <input type="time" id="profile-end-input" value="22:00">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>표시할 요일</label>
+      <div class="day-picker" id="profile-day-picker"></div>
+    </div>
+    <div class="form-group">
+      <label>학교 시간표 자동입력 (학기 중)</label>
+      <select id="profile-school-preset-select"></select>
+    </div>
+    <div class="form-group" id="profile-preset-apply-row" style="display:none;">
+      <button class="btn btn-secondary btn-block" id="btn-apply-school-preset" type="button">학교 시간표 적용 (1학기·2학기의 기존 학교 일정을 덮어써요)</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-text" id="btn-profile-cancel">취소</button>
+      <button class="btn btn-primary" id="btn-profile-save">저장</button>
+    </div>
+  </div>
+
+  <!-- 일정 항목 편집 -->
+  <div id="modal-entry-edit" class="modal">
+    <h2 class="modal-title" id="entry-edit-title">일정 추가</h2>
+    <div class="form-group">
+      <label>카테고리</label>
+      <div class="category-picker" id="entry-category-picker"></div>
+    </div>
+    <div class="form-group">
+      <label>메인 제목</label>
+      <input type="text" id="entry-title-input" placeholder="예: 영어학원, 수학, 축구클럽" maxlength="14">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>시작 시간</label>
+        <input type="time" id="entry-start-input" step="1800">
+      </div>
+      <div class="form-group">
+        <label>종료 시간</label>
+        <input type="time" id="entry-end-input" step="1800">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>표시사항 (선택)</label>
+      <textarea id="entry-note-input" placeholder="예: 준비물 - 줄넘기" maxlength="40" rows="2"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="entry-color-override-check">
+        색상 직접 지정
+      </label>
+      <div class="color-palette" id="entry-color-palette"></div>
+    </div>
+    <p class="error-msg" id="entry-error-msg"></p>
+    <div class="modal-actions modal-actions-3">
+      <button class="btn btn-text btn-danger" id="btn-entry-delete">삭제</button>
+      <button class="btn btn-text" id="btn-entry-cancel">취소</button>
+      <button class="btn btn-primary" id="btn-entry-save">저장</button>
+    </div>
+  </div>
+
+  <!-- 학기 일정 복사 -->
+  <div id="modal-copy-semester" class="modal">
+    <h2 class="modal-title">학기 일정 복사</h2>
+    <div class="form-group">
+      <label>복사할 학기 (원본)</label>
+      <select id="copy-from-select"></select>
+    </div>
+    <div class="form-group">
+      <label>붙여넣을 학기 (대상)</label>
+      <select id="copy-to-select"></select>
+    </div>
+    <p class="settings-hint">대상 학기의 기존 일정은 모두 삭제되고, 원본 학기의 일정으로 덮어써져요.</p>
+    <div class="modal-actions">
+      <button class="btn btn-text" id="btn-copy-semester-cancel">취소</button>
+      <button class="btn btn-primary" id="btn-copy-semester-confirm">복사하기</button>
+    </div>
+  </div>
+
+  <!-- 카테고리 / 프로필 설정 -->
+  <div id="modal-settings" class="modal modal-wide">
+    <h2 class="modal-title">설정</h2>
+    <h3 class="settings-section-title">카테고리</h3>
+    <div class="category-list" id="category-list"></div>
+    <button class="btn btn-secondary btn-block" id="btn-category-add">+ 카테고리 추가</button>
+
+    <h3 class="settings-section-title">학교 시간표 기본값</h3>
+    <p class="settings-hint">프로필 추가/수정 시 선택하면 1학기·2학기에 '학교' 일정이 자동으로 채워져요.</p>
+    <div class="preset-list" id="preset-list"></div>
+    <button class="btn btn-secondary btn-block" id="btn-preset-add">+ 기본값 추가</button>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="btn-settings-close">닫기</button>
+    </div>
+  </div>
+
+  <!-- 학교 시간표 기본값 편집 -->
+  <div id="modal-preset-edit" class="modal modal-wide">
+    <h2 class="modal-title">학교 시간표 기본값 편집</h2>
+    <div class="form-group">
+      <label>이름</label>
+      <input type="text" id="preset-name-input" maxlength="20">
+    </div>
+    <div id="preset-days-editor"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="btn-preset-edit-close">닫기</button>
+    </div>
+  </div>
+
+  <!-- 이미지 저장 결과 -->
+  <div id="modal-image-result" class="modal modal-wide">
+    <h2 class="modal-title">이미지 저장</h2>
+    <div class="format-toggle" id="image-format-toggle">
+      <button class="format-btn active" data-format="basic" type="button">기본형</button>
+      <button class="format-btn" data-format="story" type="button">세로형</button>
+    </div>
+    <p class="image-guide">이미지를 <b>길게 눌러서</b> 저장하거나, 아래 버튼으로 다운로드하세요.</p>
+    <div class="image-result-wrap">
+      <img id="image-result-img" alt="시간표 이미지">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-text" id="btn-image-close">닫기</button>
+      <a class="btn btn-primary" id="btn-image-download" download="시간표.jpg">다운로드 (JPG)</a>
+    </div>
+  </div>
+
+  <!-- 인쇄 미리보기 -->
+  <div id="modal-print" class="modal modal-print">
+    <h2 class="modal-title">인쇄 미리보기</h2>
+    <div class="format-toggle" id="print-format-toggle">
+      <button class="format-btn active" data-orientation="landscape" type="button">기본형 (가로)</button>
+      <button class="format-btn" data-orientation="portrait" type="button">세로형</button>
+    </div>
+    <div class="print-scale-row">
+      <label for="print-scale-slider">인쇄 배율</label>
+      <input type="range" id="print-scale-slider" min="50" max="100" value="100">
+      <span id="print-scale-value">100%</span>
+    </div>
+    <div class="print-preview-outer">
+      <div class="print-preview-thumb">
+        <div class="print-preview-page" id="print-preview-page">
+          <div class="print-preview-scaler" id="print-preview-scaler"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-text" id="btn-print-close">닫기</button>
+      <button class="btn btn-primary" id="btn-print-go">인쇄하기</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- 인쇄 전용 영역 (화면에는 보이지 않음) -->
+<div id="print-area"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
