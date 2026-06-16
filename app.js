@@ -142,6 +142,12 @@ function loadState() {
       }
       if (!parsed.schoolPresets || !parsed.schoolPresets.length) {
         parsed.schoolPresets = JSON.parse(JSON.stringify(DEFAULT_SCHOOL_PRESETS));
+      } else {
+        // 기본 프리셋 이름이 코드에서 바뀌면 기존 저장 데이터에도 반영
+        parsed.schoolPresets = parsed.schoolPresets.map((p) => {
+          const def = DEFAULT_SCHOOL_PRESETS.find((d) => d.id === p.id);
+          return def ? { ...p, name: def.name } : p;
+        });
       }
       parsed.profiles = parsed.profiles || [];
       parsed.schedules = parsed.schedules || {};
