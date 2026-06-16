@@ -39,14 +39,14 @@ const P3_TUE = [...P3_REGULAR, { title: '6교시', start: '13:40', end: '14:20' 
 const DEFAULT_SCHOOL_PRESETS = [
   {
     id: 'preset-solgae-1',
-    name: '솔개초 1학년',
+    name: '1학년 시간표',
     days: {
       0: P1_REGULAR, 1: P1_REGULAR, 2: P1_WED, 3: P1_REGULAR, 4: P1_REGULAR, 5: [], 6: [],
     },
   },
   {
     id: 'preset-solgae-3',
-    name: '솔개초 3학년',
+    name: '3학년 시간표',
     days: {
       0: P3_REGULAR, 1: P3_TUE, 2: P3_REGULAR, 3: P3_REGULAR, 4: P3_REGULAR, 5: [], 6: [],
     },
